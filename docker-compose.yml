@@ -1,0 +1,36 @@
+services:
+  kafka:
+    image: apache/kafka:4.1.2
+    container_name: kafka
+    hostname: kafka
+    restart: unless-stopped
+    ports:
+      - "${KAFKA_INTERNAL_PORT}:${KAFKA_INTERNAL_PORT}"
+      - "${KAFKA_EXTERNAL_PORT}:${KAFKA_EXTERNAL_PORT}"
+    volumes:
+      - ./data/kafka:/var/lib/kafka/data
+      - ./infra/kafka/entrypoint.sh:/entrypoint.sh:ro
+      - ./infra/kafka/jaas.conf:/etc/kafka/jaas.conf:ro
+    environment:
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/jaas.conf"
+
+      KAFKA_CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+      KAFKA_NODE_ID: ${KAFKA_NODE_ID}
+
+      KAFKA_INTERNAL_HOST: ${KAFKA_INTERNAL_HOST}
+      KAFKA_INTERNAL_PORT: ${KAFKA_INTERNAL_PORT}
+      KAFKA_EXTERNAL_HOST: ${KAFKA_EXTERNAL_HOST}
+      KAFKA_EXTERNAL_PORT: ${KAFKA_EXTERNAL_PORT}
+      KAFKA_CONTROLLER_PORT: ${KAFKA_CONTROLLER_PORT}
+
+      KAFKA_INTER_BROKER_USERNAME: ${KAFKA_INTER_BROKER_USERNAME}
+      KAFKA_INTER_BROKER_PASSWORD: ${KAFKA_INTER_BROKER_PASSWORD}
+
+      KAFKA_CLIENT_USERNAME: ${KAFKA_CLIENT_USERNAME}
+      KAFKA_CLIENT_PASSWORD: ${KAFKA_CLIENT_PASSWORD}
+
+      KAFKA_NUM_PARTITIONS: ${KAFKA_NUM_PARTITIONS}
+      KAFKA_DEFAULT_REPLICATION_FACTOR: ${KAFKA_DEFAULT_REPLICATION_FACTOR}
+      KAFKA_MIN_INSYNC_REPLICAS: ${KAFKA_MIN_INSYNC_REPLICAS}
+    command: ["bash", "/entrypoint.sh"]
+    

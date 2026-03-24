@@ -1,98 +1,132 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Kafka Interview Questions – Big Tech Focus
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## 1. Kafka là gì? Tại sao sử dụng Kafka?
+- Kafka là distributed streaming platform để gửi, nhận, lưu trữ và xử lý luồng dữ liệu thời gian thực.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 2. Partition & Topic
+- Partition quyết định parallelism và scalability.
+- Topic là channel logic cho producer gửi và consumer đọc message.
+- Partition phân chia dựa trên **key** của message hoặc round-robin nếu key null.
+- Mỗi partition là **log tuần tự**, message được đánh số bằng **offset**.
 
-## Description
+## 3. Số lượng partition và topic
+- Chọn đủ để tận dụng parallelism nhưng tránh overhead.
+- Không có con số cố định, phụ thuộc throughput và số lượng consumer trong group.
+- Partition nhiều hơn consumer trong group → một số consumer đọc nhiều partition.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 4. Key trong Kafka
+- Key quyết định partition của message.
+- Chọn key liên quan tới entity cần ordering, ví dụ `userId`, `orderId`.
+- Nếu không cần ordering, key có thể null → round-robin.
 
-## Project setup
+## 5. Consumer & Consumer Group
+- Consumer group chia workload và quản lý offset.
+- Một consumer có thể đọc nhiều topic:
+  - Được phép nhưng workload và ordering cần cân nhắc.
+  - Mỗi topic consumer listen riêng, Kafka đảm bảo mỗi partition được assign cho **một consumer trong group**.
+- Offset commit riêng cho từng group → các group đọc cùng topic không ảnh hưởng lẫn nhau.
 
-```bash
-$ npm install
-```
+## 6. Offset storage
+- Offset lưu trong topic `__consumer_offsets`.
+- Commit offset quá thường xuyên gây performance issue vì disk I/O.
+- Consumer đọc log theo offset, đánh dấu log đã đọc.
 
-## Compile and run the project
+## 7. Log structure và copy message
+- Mỗi partition là log tuần tự, mỗi message có offset.
+- Consumer đọc log theo offset, có thể replay từ offset cũ.
+- Message copy giữa nhiều consumer group là bản chất Kafka lưu message trong log, group khác đọc độc lập.
 
-```bash
-# development
-$ npm run start
+## 8. Tại sao Kafka cần nhiều partition cho `__consumer_offsets`
+- Để scale commits khi nhiều consumer groups.
+- Tránh bottleneck ghi offset.
 
-# watch mode
-$ npm run start:dev
+## 9. Kafka authentication & security
+- SASL/PLAIN, SASL/SCRAM, SSL.
+- Broker không hỗ trợ mechanism → handshake fail.
+- External Kafka: cần username/password, security protocol chính xác.
 
-# production mode
-$ npm run start:prod
-```
+## 10. Kafka với NestJS
+- Config clientId, brokers, sasl/ssl.
+- Consumer đọc nhiều topic thuộc các group khác nhau.
+- Consumer có thể đọc message từ nhiều topic nhưng mỗi topic nên có strategy xử lý riêng.
 
-## Run tests
+## 11. Producer gửi message lớn
+- Kafka chia message lớn thành nhiều phần.
+- Consumer ghép lại để đảm bảo toàn vẹn.
+- Thường dùng streaming để gửi/nhận dữ liệu lớn trong microservices.
 
-```bash
-# unit tests
-$ npm run test
+## 12. Ordering trong Kafka
+- Ordering chỉ đảm bảo trong cùng partition.
+- Sử dụng key để ensure ordering theo entity.
 
-# e2e tests
-$ npm run test:e2e
+## 13. Idempotent producer là gì
+- Producer gửi lại message mà không tạo duplicate.
+- Dùng khi retry message gửi thất bại.
 
-# test coverage
-$ npm run test:cov
-```
+## 14. Exactly-once semantics (EOS)
+- Đảm bảo message được process **chính xác một lần**.
+- Kết hợp idempotent producer + transactional consumer.
 
-## Deployment
+## 15. Kafka Streams vs Consumer API
+- Kafka Streams: xử lý stream nâng cao, stateful processing.
+- Consumer API: đọc và xử lý message theo logic custom.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## 16. Retention policy trong Kafka
+- Log retention theo thời gian hoặc dung lượng.
+- Config `log.retention.ms` hoặc `log.retention.bytes`.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## 17. Log compaction
+- Giữ message cuối cùng theo key.
+- Dùng khi cần reconstruct state thay vì tất cả events.
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+## 18. Rebalancing trong consumer group
+- Khi consumer join/leave → partition reassign.
+- Gây pause message consumption tạm thời.
+- Khi một consumer đọc nhiều topic, rebalancing diễn ra riêng theo từng topic.
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## 19. Dead Letter Queue (DLQ)
+- Chứa message lỗi không process được.
+- Giúp retry hoặc phân tích lỗi.
 
-## Resources
+## 20. Kafka Connect là gì
+- Tool để integrate Kafka với DB, filesystem, hoặc external system.
+- Dùng connector source/sink.
 
-Check out a few resources that may come in handy when working with NestJS:
+## 21. Kafka trong microservices
+- Decouple services, đảm bảo asynchronous communication.
+- Event-driven architecture giúp scale và resilient.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## 22. Monitoring Kafka
+- Theo dõi metrics: lag, throughput, broker health.
+- Dùng Prometheus + Grafana hoặc Confluent Control Center.
 
-## Support
+## 23. Troubleshooting Kafka common issues
+- `KafkaJSConnectionClosedError`: network/connectivity hoặc broker down.
+- SASL handshake error: check mechanism & credentials.
+- Performance issue: quá nhiều commit offset hoặc quá ít partition.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## 24. Best Practices
+- Partition vừa đủ, key hợp lý, consumer group scale hợp lý.
+- Offset commit định kỳ, security chính xác.
+- DLQ cho message lỗi, monitor system liên tục.
+- Tránh connect external Kafka trong prod nếu không cần thiết.
+- Dùng streaming hoặc gRPC khi gửi message lớn giữa microservices.
+- Tối ưu số lượng topic & group theo nhu cầu đọc/ghi.
+- Khi consumer đọc nhiều topic, kiểm tra rebalancing và parallelism.
 
-## Stay in touch
+## 25. Scenario / Case-based questions
+- Làm thế nào để scale consumer group khi throughput tăng? → tăng partition, thêm consumer, rebalancing.
+- Nếu một consumer bị down, message sẽ xử lý thế nào? → partition reassign, consumer khác tiếp tục đọc.
+- Làm sao đảm bảo ordering khi message gửi từ nhiều producer? → dùng key cố định cho entity và cùng partition.
+- Khi commit offset nhiều gây lag, giải pháp? → commit định kỳ, tăng batch size.
+- Một consumer đọc nhiều topic, cách phân chia partition hiệu quả và tránh bottleneck?
+  - Sử dụng **round-robin partition assignment** hoặc **sticky assignment** để cân bằng workload.
+  - Theo dõi lag từng partition, tránh gán quá nhiều partition cho một consumer.
+- Khi nhiều consumer listen cùng một topic, làm sao Kafka copy message cho từng group?
+  - Kafka giữ message trong log, mỗi **consumer group đọc riêng**, copy bản chất là đọc từ log không xóa.
+- Nếu muốn replay log từ thời điểm cũ, cần làm gì với offset?
+  - Reset offset về giá trị cũ hoặc timestamp cần replay, consumer sẽ đọc lại từ offset đó.
+- Khi partition số lượng lớn hơn consumer, cách Kafka phân chia workload?
+  - Mỗi consumer có thể đọc nhiều partition.
+  - Partition assignment algorithm (Range, RoundRobin, Sticky) đảm bảo phân phối cân bằng giữa các consumer trong group.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).

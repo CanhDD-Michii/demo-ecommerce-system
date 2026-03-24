@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { InventoryServiceModule } from './inventory-service.module';
+import { InventoryServiceModule } from './inventory.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(InventoryServiceModule);
